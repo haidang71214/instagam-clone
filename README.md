@@ -159,7 +159,7 @@ Frontend: http://localhost:3000
 
 
 
-Backend: http://localhost:4001
+Backend: http://localhost:8080
 
 🧪 Tests
 
@@ -171,37 +171,6 @@ npm run test
 cd frontend
 npm run test
 
-🚀 Deployment
-
-Deploy with Docker or follow Node.js deployment docs. Example Docker setup:
-
-version: '3.8'
-services:
-  backend:
-    image: node:18
-    working_dir: /app
-    volumes:
-      - ./backend:/app
-    command: npm run start:prod
-    ports:
-      - '4001:4001'
-  frontend:
-    image: node:18
-    working_dir: /app
-    volumes:
-      - ./frontend:/app
-    command: npm run build && npm run start
-    ports:
-      - '3000:3000'
-  db:
-    image: mysql:8.0
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: instagram_db
-    volumes:
-      - db-data:/var/lib/mysql
-volumes:
-  db-data:
 
 🤝 Contributing
 
