@@ -8,7 +8,17 @@ import initModels from "./src/models/init-models.js";
 import sequelize from "./src/models/connect.js";
 const model = initModels(sequelize);
 // nhận event từ cái server(socket);
+(async () => {
+  try {
+    await sequelize.authenticate();
+    console.log("✅ MySQL connected!");
 
+    await sequelize.sync({ alter: true });
+    console.log("✅ Database synced!");
+  } catch (err) {
+    console.error("❌ Database error:", err);
+  }
+})();
 //
 const app = express();
 // chuyển mọi thứ sang json
@@ -35,7 +45,7 @@ app.get('/',(req,res)=>{
    res.send('hehehe')
 });
 // đổi từ app.listen thành server.listen nếu muốn dùng socket (hoặc tí đổi lại)
-server.listen(8080, () => {
+server.listen(8081, () => {
    console.log("server on port 8080");
 });
 

@@ -1,0 +1,26 @@
+name: Dockerized App Deployment
+on:
+  push:
+    branches: [master]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy using ssh
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          port: 24700
+          script: |
+            cd /root/instagam/backend
+            git fetch origin 
+            git checkout master
+            git pull origin master
+            docker build -t instagram .
+            docker stop instagram-container || true
+            docker rm instagram-container || true
+            docker run -d --name instagram-container -p 4002:8081 instagram
+            docker ps -a
+            docker images
