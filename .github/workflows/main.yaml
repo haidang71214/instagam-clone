@@ -1,13 +1,13 @@
 name: Dockerized App Deployment
 on:
   push:
-    branches: [main]
+    branches: [master]
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy using ssh
-        uses: appleboy/ssh-action@main
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
