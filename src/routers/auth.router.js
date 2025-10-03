@@ -4,7 +4,10 @@ import { uploadCloudAvarta } from '../config/uploadCloudAvatar.js';
 import { middlewareTokenAsyncKey } from '../config/jwt.js';
 
 const authRouter = express.Router();
-authRouter.post('/register', register); 
+authRouter.post('/register', (req, res, next) => {
+   console.log('=== ROUTE /register HIT BEFORE CONTROLLER ===');  // Log trước khi vào controller
+   return register(req, res);  // Gọi controller
+});
 authRouter.post('/login',loginAsyncKey);
 authRouter.post('/forgotPass', forgotPass)
 authRouter.post('/changePass',changePass);
