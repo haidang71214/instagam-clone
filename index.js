@@ -41,7 +41,7 @@ app.use((req, res, next) => {
    next();
 });
 app.use(cors({
-   origin: "http://localhost:3000",
+   origin: "http://103.57.223.234:4003/",
    credentials: true,
    preflightContinue: true,
 }));
