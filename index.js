@@ -4,10 +4,13 @@ import cors from 'cors'
 import cookieParser from 'cookie-parser';
 import { Server } from 'socket.io';
 import {createServer} from 'http'; 
-import initModels from "./src/models/init-models.js";
 import sequelize from "./src/models/connect.js";
-const model = initModels(sequelize);
-// nhận event từ cái server(socket);
+import dotenv from 'dotenv';  // Uncomment + import
+dotenv.config();  // Load env ở đầu
+
+let model;  // Declare global model
+
+// Sync + init model
 (async () => {
   try {
     await sequelize.authenticate();
@@ -15,41 +18,40 @@ const model = initModels(sequelize);
 
     await sequelize.sync({ alter: true });
     console.log("✅ Database synced!");
+
+    // Fix: Init model SAU sync
+    const initModels = (await import("./src/models/init-models.js")).default;
+    model = initModels(sequelize);
+    global.model = model;  // Global để controller dùng
+    console.log("✅ Models initialized!");
+
   } catch (err) {
     console.error("❌ Database error:", err);
   }
 })();
-//
+
 const app = express();
-// chuyển mọi thứ sang json
-// socket tạo http server với socketIO server
-   const server = createServer(app);
-   const io = new Server(server,{
-      cors:'*'
-   }); 
 
-//
-app.use(express.json())
-app.use(
-   cors({
-      origin: "http://localhost:3000", //
-      credentials: true, // Nếu bạn sử dụng cookie, phải có cấu hình này
-      preflightContinue: true,
-   })
-);
-//middware để getifomation
+const server = createServer(app);
+const io = new Server(server, { cors: '*' });
+
+app.use(express.json());
+app.use((req, res, next) => {
+   console.log(`ALL REQUEST INCOMING: ${req.method} ${req.url} from IP ${req.ip}`);  // Log tất cả request
+   next();
+});
+app.use(cors({
+   origin: "http://localhost:3000",
+   credentials: true,
+   preflightContinue: true,
+}));
 app.use(cookieParser());
-// 
+
 app.use(rootRouter);
-app.get('/',(req,res)=>{
-   res.send('hehehe')
-});
-// đổi từ app.listen thành server.listen nếu muốn dùng socket (hoặc tí đổi lại)
-server.listen(8081, () => {
-   console.log("server on port 8080");
+app.get('/', (req, res) => {
+   res.send('hehehe');
 });
 
-// express không hỗ trợ mình trực tiếp tạo socketIO mà mình phải dùng thư viện;
-// để ý cái này ha, mình mở bao nhiêu cái tab thì nó sẽ nhảy ra bấy nhiêu cái otAuNBeLeXcl4sKiAAAC
-// fEGLDOlhrMqPP4IZAAAD
-// 
+server.listen(8080, () => {
+   console.log("server on port 4002");
+});

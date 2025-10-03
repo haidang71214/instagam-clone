@@ -5,46 +5,81 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import transporter from "../config/transporter.js";
 import { createRefTokenAsyncKey, createTokenAsyncKey } from "../config/jwt.js";
-const model = initModels(sequelize);
-const register = async (req, res) => {
+const model = initModels(sequelize);const register = async (req, res) => {
+   console.log('=== REGISTER HIT: Route matched! ===');  // Log 1: Xác nhận vào hàm
+   
+   console.log('Sequelize instance check:', !!sequelize);  // Log 2: Check sequelize có tồn tại không
+   console.log('Model.users check:', !!model?.users);  // Log 3: Check model load OK
+   
    try {
-      // lấy email,pass với full_name
+      console.log('Starting try block...');  // Log 4: Vào try
+      
+      // Test connect NGAY ĐẦU (trước req.body)
+      console.log('Step 1: Authenticating DB...');
+      const testAuth = await sequelize.authenticate();
+      console.log('Step 1 OK: Auth result:', testAuth ? 'SUCCESS' : 'FAIL');  // Phải là undefined nếu OK (Sequelize convention)
+      
+      console.log('Step 2: Testing findOne...');
+      const testUser = await model.users.findOne({ where: { email: 'test@fake.com' } });
+      console.log('Step 2 OK: Test user found?', !!testUser);  // false nếu không tồn tại
+      
+      console.log('Step 3: Req body:', req.body);  // Log 5: Giờ mới log body
       const { full_name, email, pass_word, age } = req.body;
-      const user = await model.users.findOne({
-         where:{
-            email: email,
-         }
-      });
-      if (user) {
-         return res.status(404).json({ message: "Email đã tồn tại trong hệ thống" });
-      } else {
-         const newUser = await model.users.create({
-            // phần avatar mình làm để ở update
-            email: email,
-            full_name,
-            pass_word: bcrypt.hashSync(pass_word, 10),
-            age,
-         });
-         const mailOption = {
-            from: "dangpnhde170023@fpt.edu.vn",
-            to: email,
-            subject: "Welcome to our service",
-            text: "best regart",
-         };
-         // gửi mail
-         transporter.sendMail(mailOption, (err, info) => {
-            if (err) {
-               return res.status(400).json({ message: "sending mail error" });
-            }
-            return res.status(200).json({
-               message: "Đăng kí thành công",
-               data: newUser,
-            });
-         });
-         return res.status(200).json({ message: "Đăng kí thành công", data: newUser });
+      
+      // Validate (tránh crash)
+      if (!email || !pass_word || !full_name || age === undefined) {
+         console.log('Validation fail: Missing fields');
+         return res.status(400).json({ message: "Thiếu thông tin bắt buộc" });
       }
+      
+      console.log('Step 4: Checking existing user...');
+      const user = await model.users.findOne({ where: { email } });
+      console.log('Step 4 OK: User exists?', !!user);
+      
+      if (user) {
+         console.log('User exists, returning 409');
+         return res.status(409).json({ message: "Email đã tồn tại trong hệ thống" });
+      }
+      
+      console.log('Step 5: Creating user...');
+      const newUser = await model.users.create({
+         email,
+         full_name,
+         pass_word: bcrypt.hashSync(pass_word, 10),
+         age,
+      });
+      console.log('Step 5 OK: New user ID:', newUser.user_id);
+      
+      // Mail part (await để chờ)
+      console.log('Step 6: Sending mail...');
+      const mailOption = {
+         from: "dangpnhde170023@fpt.edu.vn",
+         to: email,
+         subject: "Welcome to our service",
+         text: "Best regards!",
+      };
+      await transporter.sendMail(mailOption);  // Await để sync
+      console.log('Step 6 OK: Mail sent');
+      
+      return res.status(201).json({
+         message: "Đăng kí thành công",
+         data: { id: newUser.user_id, email: newUser.email, full_name: newUser.full_name }
+      });
+      
    } catch (error) {
-      return res.status(500).json({ message: "sai" });
+      console.error('=== CATCH BLOCK: REGISTER ERROR ===');
+      console.error('- Error name:', error.name);
+      console.error('- Error message:', error.message);
+      console.error('- Error code:', error.code || 'N/A');  // Sequelize error code (ER_ACCESS_DENIED_ERROR, etc.)
+      console.error('- Error stack:', error.stack);
+      if (error.parent) {  // Sequelize wrap MySQL error
+         console.error('- MySQL original error:', error.parent.message);
+      }
+      console.log("AAAAAAAAAAA");
+      
+      return res.status(500).json({ 
+         message: "Lỗi: " + (error.message || "Unknown DB error")  // Return error cụ thể hơn
+      });
    }
 };
 // lưu trữ gia hạn người dùng mỗi khi hết phiên đăng nhập
