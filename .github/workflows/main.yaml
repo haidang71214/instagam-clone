@@ -21,6 +21,6 @@ jobs:
             docker build -t instagrambackend .
             docker stop instagrambackend-container || true
             docker rm instagrambackend-container || true
-            docker run -d --name instagrambackend-container -p 4002:8081 instagrambackend
+            docker run -d --name instagrambackend-container -p 4002:8080 instagrambackend
             docker ps -a
             docker images
